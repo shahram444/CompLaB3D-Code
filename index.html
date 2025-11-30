@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CompLaB3D — Pore-Scale Reactive Transport Simulator</title>
+    <style>
+        :root {
+            --water: #0077b6;
+            --water-dark: #005f8a;
+            --water-light: #00a8e8;
+            --sediment: #8b7355;
+            --sediment-light: #a08060;
+            --reaction: #e67e22;
+            --reaction-light: #f39c12;
+            --success: #27ae60;
+            --bg: #ffffff;
+            --bg-alt: #f5f7f9;
+            --bg-warm: #faf8f5;
+            --text: #2c3e50;
+            --text-secondary: #5a6a7a;
+            --text-light: #8a9aaa;
+            --border: #e0e5ea;
+            --code-bg: #1a2332;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.9rem 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            text-decoration: none;
+        }
+
+        .logo-mark {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(145deg, var(--water) 0%, var(--water-dark) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-mark::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 35%;
+            background: var(--sediment);
+        }
+
+        .logo-mark span {
+            font-weight: 700;
+            font-size: 0.7rem;
+            color: white;
+            z-index: 1;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .logo-text em {
+            font-style: normal;
+            color: var(--water);
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav a:hover { color: var(--water); }
+
+        .nav-cta {
+            background: var(--water);
+            color: white !important;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .nav-cta:hover { background: var(--water-dark); }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--water);
+            color: white;
+        }
+
+        .btn-primary:hover { background: var(--water-dark); }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--water);
+            color: var(--water);
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            padding: 4rem 0 5rem;
+            background: linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--text);
+            margin-bottom: 1.25rem;
+        }
+
+        .hero h1 span { color: var(--water); }
+
+        .hero-desc {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .hero-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 2rem;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.85rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .hero-buttons { display: flex; gap: 0.75rem; }
+
+        /* Hero Placeholder */
+        .hero-placeholder {
+            background: var(--bg-warm);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2.5rem;
+            text-align: center;
+            min-height: 340px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .placeholder-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .placeholder-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        .placeholder-hint {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            max-width: 260px;
+        }
+
+        /* ===== SECTIONS ===== */
+        section { padding: 4.5rem 0; }
+        section.alt { background: var(--bg-alt); }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--water);
+            margin-bottom: 0.6rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.75rem;
+        }
+
+        .section-desc {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        /* ===== OVERVIEW GRID ===== */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .overview-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.75rem;
+            transition: all 0.25s;
+        }
+
+        .overview-card:hover {
+            border-color: var(--water);
+            box-shadow: 0 8px 25px rgba(0, 119, 182, 0.08);
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-alt);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .overview-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.6rem;
+        }
+
+        .overview-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.65;
+        }
+
+        /* ===== TWO COLUMN LAYOUT ===== */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: start;
+        }
+
+        /* ===== PHYSICS LIST ===== */
+        .physics-block h3 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+        }
+
+        .physics-list {
+            list-style: none;
+        }
+
+        .physics-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .physics-item:last-child { border-bottom: none; }
+
+        .physics-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--bg-alt);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+
+        .physics-text h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.2rem;
+        }
+
+        .physics-text p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* ===== FIGURE PLACEHOLDER ===== */
+        .figure-box {
+            background: var(--bg-warm);
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.25s;
+        }
+
+        .figure-box:hover {
+            border-color: var(--water);
+            background: linear-gradient(145deg, rgba(0,119,182,0.02), rgba(139,115,85,0.02));
+        }
+
+        .figure-box .icon {
+            font-size: 3rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.45;
+        }
+
+        .figure-box .label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.3rem;
+        }
+
+        .figure-box .hint {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            max-width: 220px;
+        }
+
+        /* ===== WORKFLOW ===== */
+        .workflow-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+        }
+
+        .workflow-step {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem 1.25rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-num {
+            width: 36px;
+            height: 36px;
+            background: var(--water);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin: 0 auto 1rem;
+        }
+
+        .workflow-step h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .workflow-step p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Arrow between steps */
+        .workflow-step::after {
+            content: '→';
+            position: absolute;
+            right: -18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--border);
+            font-size: 1.25rem;
+            font-weight: 300;
+        }
+
+        .workflow-step:last-child::after { display: none; }
+
+        /* ===== INPUT/OUTPUT ===== */
+        .io-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .io-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .io-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .io-header.input { background: rgba(0, 119, 182, 0.05); }
+        .io-header.output { background: rgba(39, 174, 96, 0.05); }
+
+        .io-content { padding: 1.25rem; }
+
+        .io-item {
+            display: flex;
+            gap: 0.9rem;
+            padding: 0.85rem 0;
+            border-bottom: 1px solid var(--bg-alt);
+        }
+
+        .io-item:last-child { border-bottom: none; }
+
+        .io-icon {
+            width: 38px;
+            height: 38px;
+            background: var(--bg-alt);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .io-text h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.15rem;
+        }
+
+        .io-text p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .file-tag {
+            display: inline-block;
+            margin-top: 0.35rem;
+            padding: 0.15rem 0.45rem;
+            background: var(--bg-alt);
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.7rem;
+            color: var(--water);
+        }
+
+        /* ===== RESULTS GALLERY ===== */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .result-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.25s;
+        }
+
+        .result-card:hover {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            transform: translateY(-2px);
+        }
+
+        .result-placeholder {
+            height: 160px;
+            background: var(--bg-warm);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .result-placeholder .icon {
+            font-size: 2.5rem;
+            opacity: 0.35;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-placeholder .text {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .result-content {
+            padding: 1.25rem;
+        }
+
+        .result-content h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.4rem;
+        }
+
+        .result-content p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        /* ===== APPLICATIONS ===== */
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+        }
+
+        .app-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.25s;
+        }
+
+        .app-card:hover {
+            border-color: var(--water);
+        }
+
+        .app-icon {
+            font-size: 1.75rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .app-card h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .app-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        /* ===== INSTALLATION ===== */
+        .install-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .install-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .install-header {
+            padding: 1rem 1.25rem;
+            background: var(--bg-alt);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 600;
+        }
+
+        .install-content {
+            padding: 1.5rem;
+        }
+
+        .install-content p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .req-list {
+            list-style: none;
+        }
+
+        .req-list li {
+            padding: 0.4rem 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .req-list li::before {
+            content: '✓';
+            color: var(--success);
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            border-radius: 8px;
+            padding: 1.25rem;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.82rem;
+            color: #e2e8f0;
+            overflow-x: auto;
+            line-height: 1.7;
+        }
+
+        .code-block .comment { color: #5a7a9a; }
+        .code-block .cmd { color: #68d391; }
+
+        /* ===== SPECS TABLE ===== */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .specs-table th,
+        .specs-table td {
+            padding: 0.9rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .specs-table th {
+            background: var(--bg-alt);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+        }
+
+        .specs-table td {
+            font-size: 0.9rem;
+        }
+
+        .specs-table tr:last-child td { border-bottom: none; }
+
+        .specs-table td:first-child {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .specs-table code {
+            background: var(--bg-alt);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        /* ===== CTA ===== */
+        .cta {
+            background: linear-gradient(135deg, var(--water-dark) 0%, var(--water) 100%);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .cta h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.75rem;
+        }
+
+        .cta p {
+            font-size: 1.05rem;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 1.75rem;
+            max-width: 550px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .btn-white {
+            background: white;
+            color: var(--water);
+        }
+
+        .btn-white:hover { background: var(--bg-alt); }
+
+        .btn-ghost {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255,255,255,0.4);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: white;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: var(--code-bg);
+            color: rgba(255,255,255,0.7);
+            padding: 3rem 0 2rem;
+        }
+
+        .footer-inner {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-brand p {
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            line-height: 1.7;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .footer-section h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section a {
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .footer-section a:hover { color: white; }
+
+        .footer-bottom {
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        .acknowledgement {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-top: 1.5rem;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+
+        .acknowledgement strong {
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .hero-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+            .two-col { grid-template-columns: 1fr; }
+            .overview-grid { grid-template-columns: repeat(2, 1fr); }
+            .workflow-steps { grid-template-columns: repeat(2, 1fr); }
+            .workflow-step::after { display: none; }
+            .apps-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-inner { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .nav { display: none; }
+            .hero h1 { font-size: 2rem; }
+            .overview-grid, .results-grid, .io-grid, .install-grid, .apps-grid { grid-template-columns: 1fr; }
+            .workflow-steps { grid-template-columns: 1fr; }
+            section { padding: 3rem 0; }
+            .footer-inner { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="container">
+            <div class="header-inner">
+                <a href="#" class="logo">
+                    <div class="logo-mark"><span>C3D</span></div>
+                    <div class="logo-text">Comp<em>LaB</em>3D</div>
+                </a>
+                <nav class="nav">
+                    <a href="#overview">Overview</a>
+                    <a href="#workflow">How It Works</a>
+                    <a href="#applications">Applications</a>
+                    <a href="#install">Installation</a>
+                    <a href="https://github.com/shahram444/CompLaB3D-Code" class="nav-cta">GitHub</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-content">
+                    <h1>Pore-Scale <span>Reactive Transport</span> Simulation</h1>
+                    <p class="hero-desc">
+                        CompLaB3D is an open-source Lattice Boltzmann framework for simulating 
+                        coupled fluid flow, solute transport, and geochemical reactions within 
+                        3D pore geometries derived from micro-CT scans or synthetic media.
+                    </p>
+                    <div class="hero-tags">
+                        <span class="tag">💧 Fluid Flow</span>
+                        <span class="tag">🌊 Solute Transport</span>
+                        <span class="tag">⚗️ Chemical Reactions</span>
+                        <span class="tag">🧊 3D Pore Networks</span>
+                        <span class="tag">⚡ MPI Parallel</span>
+                    </div>
+                    <div class="hero-buttons">
+                        <a href="#install" class="btn btn-primary">Get Started</a>
+                        <a href="#overview" class="btn btn-secondary">Learn More</a>
+                    </div>
+                </div>
+                <div class="hero-placeholder">
+                    <div class="placeholder-icon">🔬</div>
+                    <div class="placeholder-label">Simulation Visualization</div>
+                    <div class="placeholder-hint">Your concentration field or velocity magnitude rendering here</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- OVERVIEW -->
+    <section id="overview">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Overview</div>
+                <h2 class="section-title">What CompLaB3D Does</h2>
+                <p class="section-desc">
+                    Simulate reactive transport at the scale where it actually happens — 
+                    inside the pore spaces of rocks, sediments, and porous materials.
+                </p>
+            </div>
+
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <div class="card-icon">💧</div>
+                    <h3>Fluid Flow</h3>
+                    <p>Solve Navier-Stokes equations in complex pore geometries using the D3Q19 
+                    Lattice Boltzmann method. Calculate permeability, velocity fields, and 
+                    identify preferential flow paths.</p>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">🌊</div>
+                    <h3>Solute Transport</h3>
+                    <p>Track how dissolved species move through pore spaces via advection 
+                    and diffusion. Compute breakthrough curves, residence time distributions, 
+                    and mixing behavior.</p>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">⚗️</div>
+                    <h3>Geochemical Reactions</h3>
+                    <p>Couple transport with chemical reactions — from simple first-order 
+                    kinetics to microbially-mediated processes like sulfate reduction and 
+                    methane oxidation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PHYSICS -->
+    <section class="alt">
+        <div class="container">
+            <div class="two-col">
+                <div class="physics-block">
+                    <h3>The Physics Inside</h3>
+                    <ul class="physics-list">
+                        <li class="physics-item">
+                            <div class="physics-icon">🔷</div>
+                            <div class="physics-text">
+                                <h4>D3Q19 Lattice for Flow</h4>
+                                <p>19 velocity directions capture incompressible Navier-Stokes behavior with BGK collision</p>
+                            </div>
+                        </li>
+                        <li class="physics-item">
+                            <div class="physics-icon">🔶</div>
+                            <div class="physics-text">
+                                <h4>D3Q7 Lattice for Transport</h4>
+                                <p>Advection-diffusion equation solved with 7 velocity directions; operator splitting for reactions</p>
+                            </div>
+                        </li>
+                        <li class="physics-item">
+                            <div class="physics-icon">🧱</div>
+                            <div class="physics-text">
+                                <h4>Bounce-Back Boundaries</h4>
+                                <p>No-slip conditions at solid surfaces; pressure or velocity boundaries at inlet/outlet</p>
+                            </div>
+                        </li>
+                        <li class="physics-item">
+                            <div class="physics-icon">⚡</div>
+                            <div class="physics-text">
+                                <h4>MPI Parallelization</h4>
+                                <p>Domain decomposition enables large-scale simulations across multiple processors</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="figure-box">
+                        <div class="icon">📐</div>
+                        <div class="label">Lattice Boltzmann Schematic</div>
+                        <div class="hint">D3Q19 and D3Q7 lattice structures diagram</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WORKFLOW -->
+    <section id="workflow">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Workflow</div>
+                <h2 class="section-title">How It Works</h2>
+                <p class="section-desc">From pore geometry to simulation results in four steps.</p>
+            </div>
+
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <div class="step-num">1</div>
+                    <h4>Import Geometry</h4>
+                    <p>Load 3D pore structure from micro-CT data or generate synthetic media</p>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-num">2</div>
+                    <h4>Configure Physics</h4>
+                    <p>Set flow conditions, species properties, and reaction parameters via XML</p>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-num">3</div>
+                    <h4>Run Simulation</h4>
+                    <p>Execute coupled flow-transport-reaction solver with MPI parallelization</p>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-num">4</div>
+                    <h4>Analyze Results</h4>
+                    <p>Visualize velocity, concentration, and reaction fields in ParaView</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- INPUT/OUTPUT -->
+    <section class="alt">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Data Flow</div>
+                <h2 class="section-title">Inputs & Outputs</h2>
+            </div>
+
+            <div class="io-grid">
+                <div class="io-card">
+                    <div class="io-header input">
+                        <span>📥</span> Input Files
+                    </div>
+                    <div class="io-content">
+                        <div class="io-item">
+                            <div class="io-icon">🧊</div>
+                            <div class="io-text">
+                                <h4>Pore Geometry</h4>
+                                <p>3D voxelized domain from micro-CT or synthetic generation</p>
+                                <span class="file-tag">.raw .dat .vti</span>
+                            </div>
+                        </div>
+                        <div class="io-item">
+                            <div class="io-icon">⚙️</div>
+                            <div class="io-text">
+                                <h4>Configuration</h4>
+                                <p>Domain size, flow conditions, species, reactions</p>
+                                <span class="file-tag">.xml</span>
+                            </div>
+                        </div>
+                        <div class="io-item">
+                            <div class="io-icon">📊</div>
+                            <div class="io-text">
+                                <h4>Initial Conditions</h4>
+                                <p>Starting concentrations and boundary values</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="io-card">
+                    <div class="io-header output">
+                        <span>📤</span> Output Files
+                    </div>
+                    <div class="io-content">
+                        <div class="io-item">
+                            <div class="io-icon">💨</div>
+                            <div class="io-text">
+                                <h4>Velocity Field</h4>
+                                <p>3D velocity vectors at each pore voxel</p>
+                                <span class="file-tag">.vti (ParaView)</span>
+                            </div>
+                        </div>
+                        <div class="io-item">
+                            <div class="io-icon">🎨</div>
+                            <div class="io-text">
+                                <h4>Concentration Fields</h4>
+                                <p>Spatial distribution of each species over time</p>
+                                <span class="file-tag">.vti (ParaView)</span>
+                            </div>
+                        </div>
+                        <div class="io-item">
+                            <div class="io-icon">📈</div>
+                            <div class="io-text">
+                                <h4>Breakthrough Data</h4>
+                                <p>Effluent concentrations and residence times</p>
+                                <span class="file-tag">.csv .dat</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- EXAMPLE RESULTS -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Visualization</div>
+                <h2 class="section-title">Example Results</h2>
+                <p class="section-desc">Typical outputs from CompLaB3D simulations, visualized in ParaView.</p>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="result-placeholder">
+                        <div class="icon">🧊</div>
+                        <div class="text">Your pore geometry image here</div>
+                    </div>
+                    <div class="result-content">
+                        <h4>Pore Structure</h4>
+                        <p>3D visualization of solid matrix and pore space from micro-CT scans or synthetic media (Gaussian, Fibrous, Overlapping Spheres).</p>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-placeholder">
+                        <div class="icon">💨</div>
+                        <div class="text">Your velocity field image here</div>
+                    </div>
+                    <div class="result-content">
+                        <h4>Velocity Field</h4>
+                        <p>Flow magnitude colored by velocity. Identify preferential flow paths, calculate permeability, and locate stagnant zones.</p>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-placeholder">
+                        <div class="icon">🎨</div>
+                        <div class="text">Your concentration field image here</div>
+                    </div>
+                    <div class="result-content">
+                        <h4>Concentration Field</h4>
+                        <p>Solute distribution during transport. Track tracer migration, observe mixing zones, compute breakthrough curves.</p>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-placeholder">
+                        <div class="icon">⚗️</div>
+                        <div class="text">Your reaction rate image here</div>
+                    </div>
+                    <div class="result-content">
+                        <h4>Reaction Hotspots</h4>
+                        <p>Spatial distribution of reaction activity. Map where reactions occur and identify rate-limiting steps.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- APPLICATIONS -->
+    <section class="alt" id="applications">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Use Cases</div>
+                <h2 class="section-title">Applications</h2>
+                <p class="section-desc">Pore-scale simulations for environmental and energy research.</p>
+            </div>
+
+            <div class="apps-grid">
+                <div class="app-card">
+                    <div class="app-icon">🌍</div>
+                    <h4>Groundwater & Contaminants</h4>
+                    <p>Model pollutant migration, natural attenuation, and remediation at the pore scale where reactions occur.</p>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">🦠</div>
+                    <h4>Microbial Processes</h4>
+                    <p>Simulate biogeochemical reactions — sulfate reduction, methane oxidation, and other microbially-mediated transformations.</p>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">🏔️</div>
+                    <h4>CO₂ Sequestration</h4>
+                    <p>Study mineral trapping, dissolution-precipitation reactions, and storage behavior in geological formations.</p>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">📐</div>
+                    <h4>2D vs 3D Analysis</h4>
+                    <p>Compare dimensional effects on permeability and transport — understand when 2D slices represent 3D behavior.</p>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">🛢️</div>
+                    <h4>Enhanced Oil Recovery</h4>
+                    <p>Investigate multiphase flow, wettability effects, and chemical flooding in reservoir pore structures.</p>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">🔋</div>
+                    <h4>Battery & Fuel Cells</h4>
+                    <p>Model transport in electrode microstructures and understand how pore architecture affects performance.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- INSTALLATION -->
+    <section id="install">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Getting Started</div>
+                <h2 class="section-title">Installation</h2>
+            </div>
+
+            <div class="install-grid">
+                <div class="install-card">
+                    <div class="install-header">
+                        <span>📋</span> Requirements
+                    </div>
+                    <div class="install-content">
+                        <p>CompLaB3D requires a C++ compiler with MPI support:</p>
+                        <ul class="req-list">
+                            <li>C++11 compatible compiler (GCC 4.8+)</li>
+                            <li>MPI library (OpenMPI or MPICH)</li>
+                            <li>CMake 3.10+ (optional)</li>
+                            <li>ParaView for visualization</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="install-card">
+                    <div class="install-header">
+                        <span>💻</span> Build from Source
+                    </div>
+                    <div class="install-content">
+                        <div class="code-block">
+<span class="comment"># Clone repository</span>
+git clone https://github.com/shahram444/CompLaB3D-Code.git
+cd CompLaB3D-Code
+
+<span class="comment"># Build</span>
+mkdir build && cd build
+cmake ..
+make -j4
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <div class="install-card">
+                    <div class="install-header">
+                        <span>🚀</span> Quick Start
+                    </div>
+                    <div class="install-content">
+                        <div class="code-block">
+<span class="comment"># Run simulation (single processor)</span>
+<span class="cmd">./complab3d</span> config.xml
+
+<span class="comment"># Run with MPI (4 processors)</span>
+<span class="cmd">mpirun -np 4 ./complab3d</span> config.xml
+
+<span class="comment"># Visualize results</span>
+<span class="cmd">paraview</span> output/concentration_*.vti
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SPECIFICATIONS -->
+    <section class="alt">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Reference</div>
+                <h2 class="section-title">Technical Specifications</h2>
+            </div>
+
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Method</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Flow Solver</td>
+                        <td>D3Q19 Lattice Boltzmann</td>
+                        <td>BGK collision, incompressible limit</td>
+                    </tr>
+                    <tr>
+                        <td>Transport Solver</td>
+                        <td>D3Q7 Lattice Boltzmann</td>
+                        <td>Advection-diffusion, operator splitting</td>
+                    </tr>
+                    <tr>
+                        <td>Boundary Conditions</td>
+                        <td>Bounce-back, Zou-He</td>
+                        <td>No-slip walls, pressure/velocity BC</td>
+                    </tr>
+                    <tr>
+                        <td>Reactions</td>
+                        <td>First-order, Monod kinetics</td>
+                        <td>Configurable rates, multi-species</td>
+                    </tr>
+                    <tr>
+                        <td>Parallelization</td>
+                        <td>MPI</td>
+                        <td>3D domain decomposition</td>
+                    </tr>
+                    <tr>
+                        <td>Input Format</td>
+                        <td>Voxel data</td>
+                        <td><code>.raw</code> <code>.dat</code> <code>.vti</code></td>
+                    </tr>
+                    <tr>
+                        <td>Output Format</td>
+                        <td>VTK ImageData</td>
+                        <td><code>.vti</code> for ParaView</td>
+                    </tr>
+                    <tr>
+                        <td>Configuration</td>
+                        <td>XML</td>
+                        <td>Human-readable parameter files</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to Simulate Reactive Transport?</h2>
+            <p>Download CompLaB3D and start running pore-scale simulations for your research.</p>
+            <div class="cta-buttons">
+                <a href="https://github.com/shahram444/CompLaB3D-Code" class="btn btn-white">View on GitHub</a>
+                <a href="#" class="btn btn-ghost">Documentation</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-inner">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <div class="logo-mark"><span>C3D</span></div>
+                        <div class="logo-text" style="color: white;">Comp<em>LaB</em>3D</div>
+                    </a>
+                    <p>Open-source pore-scale reactive transport simulator for environmental and energy research applications.</p>
+                    
+                    <div class="acknowledgement">
+                        <strong>Development:</strong><br>
+                        2D version originally developed by <strong>Dr. Heewon Jung</strong><br>
+                        Extended to 3D by <strong>Shahram Asgari</strong><br><br>
+                        <strong>Affiliation:</strong> Department of Marine Sciences, University of Georgia<br>
+                        <strong>PI:</strong> Dr. Christof Meile
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="#">User Guide</a></li>
+                        <li><a href="#">Theory Manual</a></li>
+                        <li><a href="#">Tutorials</a></li>
+                        <li><a href="#">API Reference</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#">Example Cases</a></li>
+                        <li><a href="#">Publications</a></li>
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Benchmarks</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://github.com/shahram444/CompLaB3D-Code">GitHub Repository</a></li>
+                        <li><a href="https://github.com/shahram444/CompLaB3D-Code/issues">Report Issues</a></li>
+                        <li><a href="#">Contribute</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2024 CompLaB3D — University of Georgia</span>
+                <span>Licensed under GNU AGPL v3 • Built on <a href="https://palabos.unige.ch/" style="color: rgba(255,255,255,0.6);">Palabos</a></span>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
